@@ -8,16 +8,20 @@
 #include <ESP8266WiFi.h>
 
 // Update these with values suitable for your network.
-const char* ssid = "SSID";
-const char* password = "";
+const char* ssid[] = {"MyWIFIAP","MyBackupAP"};
+const char* password[] = {"The Secure Passphrase I should have","The Secure Passphrase for my backup AP"};
+const int numssid = 2; // How many SSIDs in the array above
 
 WiFiClient espClient;
 
 void setup() {
   pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
   Serial.begin(115200);
+  WiFi.hostname( "ESP8266-Test" );
   scan_wifi();
-  setup_wifi();
+  while (WiFi.status() != WL_CONNECTED){
+    setup_wifi();
+  }
 }
 
 void scan_wifi() {
@@ -50,25 +54,40 @@ void scan_wifi() {
   }
   Serial.println("");
 }
+
 void setup_wifi() {
 
   delay(10);
   // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+  for (int i = 0; i<numssid; i++) {
+    int x = 0;
+    // Try to connect to each access point for 10 seconds
+    while ((WiFi.status() != WL_CONNECTED) && (x<20)) {
+      Serial.println();
+      Serial.print("Connecting to ");
+      Serial.println(ssid[i]);
 
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+      WiFi.begin(ssid[i], password[i]);
+      while ((WiFi.status() != WL_CONNECTED) && (x<20)) {
+        x++;
+        delay(500);
+        Serial.print(".");
+      }
+    }
+    if (WiFi.status() != WL_CONNECTED) {
+      // If we got here the last connection failed so stop trying
+      WiFi.disconnect();
+      Serial.println("");
+      Serial.print("Failed to connect to ");
+      Serial.println(ssid[i]);
+    }else{
+      Serial.println("");
+      Serial.println("WiFi connected");
+      Serial.println("IP address: ");
+      Serial.println(WiFi.localIP());
+      return;
+    }
   }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
 }
 
 void loop() {

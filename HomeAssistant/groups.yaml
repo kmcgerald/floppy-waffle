@@ -1,0 +1,373 @@
+### groups.yaml
+
+  default_view:
+    name: "Main"
+    view: yes
+    entities:
+      - group.outside
+      - group.doors
+      - group.temperatures
+      - group.humidities
+      - camera.front_yard
+      - camera.kitchen
+      - climate.home
+      - group.deliveries
+      - light.kitchen
+      - light.table
+
+  automations_view:
+    name: "Automations"
+    view: yes
+    entities:
+      - group.automations
+      - group.alerts
+
+  alerts: 
+    entities:
+      - alert.ford_door
+      - alert.honda_door
+
+  automations:
+    entities:
+      - automation.turn_on_tv_room_lamp_when_sun_sets
+      - automation.turn_off_tv_room_lamp_at_2300
+      - automation.jenn_phone_home
+      - automation.jenn_phone_away
+      - automation.send_simplepush_notification_when_a_door_changes_state
+      - automation.send_simplepush_notification_when_the_honda_door_opens_for_more_than_5_seconds_to_ignore_wind_gusts
+      - automation.send_simplepush_notification_when_the_honda_door_closes_for_more_than_5_seconds_to_ignore_wind_gusts
+      - automation.send_simplepush_notifcation_when_ford_garage_door_has_been_open_for_more_than_10_min
+      - automation.send_simplepush_notifcation_when_honda_garage_door_has_been_open_for_more_than_10_min
+      - automation.turn_on_tv
+      - automation.turn_off_tv
+      - automation.ps3_input
+      - automation.tell_keith_when_it_is_midnight
+      - automation.notify_keith_when_basement_tv_turns_on
+      - automation.send_simplepush_notification_when_basement_tv_changes_state
+      - automation.start_all_of_the_watchdog_timers_on_startup
+      - automation.restart_a_timer_to_watch_the_for_sensor_updates_from_the_basement
+      - automation.restart_a_timer_to_watch_the_for_sensor_updates_from_the_garage
+      - automation.notifcation_for_when_a_watchdog_timer_expires
+      - automation.snips_announcement_of_weather_changes
+
+  bedroom:
+    view: yes
+    entities:
+      - binary_sensor.master_bedroom_occupancy
+      - media_player.bedroom_plasma_tv
+      - sensor.mbr_temperature
+      - sensor.mbr_humidity
+      - sensor.master_bedroom_temperature
+
+  basement:
+    view: yes
+    entities:
+      - binary_sensor.basement_occupancy
+      - light.theater_room
+      - media_player.basement_led_tv
+      - media_player.playstation_4
+      - sensor.basement_door
+      - sensor.basement_humidity
+      - sensor.basement_temperature
+      - sensor.basement_temperature_2
+      - sensor.walkup_liquid
+      - camera.basement
+      - switch.basement_stairs
+
+  ecobee:
+    entities:
+      - binary_sensor.basement_occupancy
+      - binary_sensor.connor_occupancy
+      - binary_sensor.home_occupancy
+      - binary_sensor.kaitlyn_occupancy
+      - binary_sensor.master_bedroom_occupancy
+      - binary_sensor.tv_room_occupancy
+      - sensor.basement_temperature_2
+      - sensor.home_humidity
+      - sensor.home_temperature
+      - sensor.master_bedroom_temperature
+      - sensor.tv_room_temperature
+
+  tvroom:
+    name: "TV Room"
+    view: yes
+    entities:
+      - binary_sensor.home_occupancy
+      - binary_sensor.tv_room_occupancy
+      - media_player.tv_room_led_tv
+      - camera.tv_room_mantel
+      - switch.tv_room
+      - sensor.home_humidity
+      - sensor.home_temperature
+      - sensor.tv_room_temperature
+      - sensor.cpu_temp
+
+  garage:
+    view: yes
+    entities:
+      - sensor.garage_door
+      - sensor.honda_door
+      - sensor.ford_door
+      - sensor.garage_temperature
+      - sensor.garage_humidity
+      - camera.garage
+
+  camera_matrix:
+    view: yes
+    name: "Cameras"
+    entities:
+      - group.cameras
+
+  devices:
+    view: yes
+    entities:
+      - group.keiths_devices
+      - group.jenns_devices
+      - group.family_devices
+      - group.tvs
+      - light.kitchen
+      - light.table
+      - light.theater_room
+      - switch.basement_stairs
+      - switch.tv_room
+      - group.networking
+      - input_select.tv_input
+      - group.octoprint
+      - media_player.playstation_4
+      - group.plex
+      - group.wifi_sensors
+
+  keiths_devices:
+    name: "Keiths Devices"
+    entities: 
+      - device_tracker.keith_nexus6
+      - device_tracker.keith_keithse8
+      - device_tracker.keiths_zenwatch3
+      - sensor.keiths_phone
+      - sensor.keiths_e8_tablet
+
+  jenns_devices:
+    name: "Jenns Devices"
+    entities:
+      - device_tracker.jenns_phone
+      - sensor.jenns_phone
+      - sensor.jenn_jennse8
+
+  family_devices:
+    name: "Other Family Devices"
+    entities:
+      - device_tracker.chucks_phone
+      - device_tracker.lindas_phone
+      - device_tracker.whitestar
+      - device_tracker.connors_fire
+      - device_tracker.kaitlyns_fire
+      - device_tracker.kaitlyns_lenovo
+      - device_tracker.lenovo_tab_10
+      - device_tracker.nintendo_switch
+
+  humidities:
+    entities:
+      - sensor.basement_humidity
+      - sensor.garage_humidity
+      - sensor.home_humidity
+      - sensor.mbr_humidity
+
+  networking:
+    entities:
+      - sensor.pihole_ads_blocked_today
+      - sensor.pihole_ads_percentage_blocked_today
+      - sensor.pihole_dns_queries_cached
+      - sensor.pihole_dns_queries_forwarded
+      - sensor.pihole_dns_queries_today
+      - sensor.pihole_dns_unique_clients
+      - sensor.pihole_dns_unique_domains
+      - sensor.pihole_domains_blocked
+      - sensor.speedtest_ping
+      - sensor.speedtest_download
+      - sensor.speedtest_upload
+      - sensor.fail2ban_ssh
+
+  occupancy:
+    entities:
+      - binary_sensor.basement_occupancy
+      - binary_sensor.connor_occupancy
+      - binary_sensor.home_occupancy
+      - binary_sensor.kaitlyn_occupancy
+      - binary_sensor.master_bedroom_occupancy
+      - binary_sensor.tv_room_occupancy
+
+  occupancy_matrix:
+    view: yes
+    name: "Occupancy"
+    entities:
+      - group.occupancy
+
+  octoprint:
+    name: "OctoPrint"
+    entities:
+      - sensor.octoprint_current_state
+      - binary_sensor.octoprint_printing
+      - binary_sensor.octoprint_printing_error
+      - sensor.octoprint_job_percentage
+      - sensor.octoprint_target_bed_temp
+      - sensor.octoprint_actual_bed_temp
+      - sensor.octoprint_target_tool0_temp
+      - sensor.octoprint_actual_tool0_temp
+
+  temperatures:
+    entities:
+      - sensor.basement_temperature
+      - sensor.basement_temperature_2
+      - sensor.connor_temperature
+      - sensor.garage_temperature
+      - sensor.home_temperature
+      - sensor.kaitlyn_temperature
+      - sensor.mbr_temperature
+      - sensor.master_bedroom_temperature
+      - sensor.tv_room_temperature
+
+  tvs:
+    name: "TVs"
+    entities:
+      - media_player.tv_room_led_tv
+      - media_player.bedroom_plasma_tv
+      - media_player.basement_led_tv
+
+  doors:
+    name: "Doors"
+    entities:
+      - sensor.basement_door
+      - sensor.front_door
+      - sensor.sliding_door
+      - sensor.garage_door
+      - sensor.ford_door
+      - sensor.honda_door
+
+  pollen: 
+    name: "Pollen"
+    entities:
+      - sensor.allergy_index_forecasted_average
+      - sensor.allergy_index_historical_average
+      - sensor.allergy_index_today
+      - sensor.allergy_index_tomorrow
+      - sensor.allergy_index_yesterday
+      - sensor.disease_average_forecasted
+
+  weather:
+    name: "Weather"
+    view: yes
+    entities:
+      - group.sun
+      - group.moon
+      - group.darksky
+      - weather.home
+      - group.pollen
+
+  iss:
+    name: "ISS"
+    view: yes
+    entities:
+      - binary_sensor.iss
+      - binary_sensor.iss_number_of_people_in_space
+      - binary_sensor.iss_next_rise
+      - binary_sensor.iss_lat
+      - binary_sensor.iss_long
+      - camera.iss
+
+  sun:
+    name: "Sun"
+    entities:
+      - sun.sun
+
+  moon:
+    name: "Moon"
+    entities:
+      - sensor.moon
+
+  outside: 
+    name: "Conditions Outside"
+    entities:
+      - sun.sun
+      - sensor.moon
+      - sensor.dark_sky_summary
+      - sensor.dark_sky_temperature
+      - sensor.dark_sky_humidity
+      - sensor.dark_sky_wind_speed
+      - camera.front_yard
+
+  darksky:
+    name: "Dark Sky"
+    entities:
+      - sensor.dark_sky_summary
+      #- sensor.dark_sky_icon
+      - sensor.dark_sky_cloud_coverage
+      - sensor.dark_sky_precip
+      - sensor.dark_sky_precip_probability
+      - sensor.dark_sky_precip_intensity
+      - sensor.dark_sky_daily_max_precip_intensity
+      - sensor.dark_sky_nearest_storm_distance
+      - sensor.dark_sky_nearest_storm_bearing
+      - sensor.dark_sky_temperature
+      - sensor.dark_sky_apparent_temperature
+      - sensor.dark_sky_daily_high_temperature
+      - sensor.dark_sky_daily_low_temperature
+      - sensor.dark_sky_daily_high_apparent_temperature
+      - sensor.dark_sky_daily_apparent_temperature
+      - sensor.dark_sky_wind_speed
+      - sensor.dark_sky_wind_bearing
+      - sensor.dark_sky_humidity
+      - sensor.dark_sky_dew_point
+      - sensor.dark_sky_pressure
+      - sensor.dark_sky_visibility
+      - sensor.dark_sky_ozone
+      - sensor.dark_sky_minutely_summary
+      - sensor.dark_sky_hourly_summary
+      - sensor.dark_sky_daily_summary
+
+  cameras:
+    name: "Cameras"
+    entities:
+      - camera.tv_room_mantel
+      - camera.basement
+      - camera.front_yard
+      - camera.kitchen
+      - camera.garage
+
+  wifi_sensors:
+    name: "WiFi Sensors"
+    entities:
+      - device_tracker.esp8266_alarm
+      - device_tracker.esp8266_basement
+      - device_tracker.esp8266_garage
+      #- device_tracker.esp8266_mbr_weather
+
+  plex: 
+    name: "Plex"
+    entities: 
+      - media_player.plex_web_chrome
+      - media_player.plex_u7chu5argpp6o  # TV Room LED
+      - media_player.plex_tm5ka9viggo2bj4idboztt89  # Basement LED
+      - sensor.plex
+
+  trouble:
+    name: "Trouble makers"
+    view: yes
+    entities:
+      - group.fail2ban
+      - group.crime
+
+  crime:
+    name: "Crime"
+    entities:
+      - sensor.crime_reports
+
+  fail2ban:
+    name: "Fail2Ban"
+    entities:
+      - sensor.fail2ban_ssh
+      - sensor.fail2ban_recidive
+
+  deliveries:
+    name: "Deliveries"
+    entities:
+      - sensor.ups

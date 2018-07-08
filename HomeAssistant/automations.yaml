@@ -1,0 +1,284 @@
+- id: tv_room_lamp_on_at_sunset
+  alias: Turn on TV Room Lamp when sun sets
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: sun
+    event: sunset
+    offset: -0:45:00
+  action:
+    service: switch.turn_on
+    entity_id: switch.tv_room
+- id: tv_room_lamp_off_at_2300
+  alias: Turn off TV Room Lamp at 2300
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: time
+    at: '23:00:00'
+  action:
+    service: switch.turn_off
+    entity_id: switch.tv_room
+- id: jenn_phone_home
+  alias: Jenn phone home
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id: device_tracker.jenns_phone
+    from: not_home
+    to: home
+    for:
+      minutes: 2
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: "Jenn is {{ trigger.to_state.state }} \n"
+- id: jenn_phone_away
+  alias: Jenn phone away
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id: device_tracker.jenns_phone
+    from: home
+    to: not_home
+    for:
+      minutes: 2
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: 'Jenn is {{ trigger.to_state.state }}
+
+        '
+- id: door_state_simplepush
+  alias: Send simplepush notification when a door changes state
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - sensor.basement_door
+    - sensor.front_door
+    - sensor.garage_door
+    - sensor.ford_door
+    - sensor.sliding_door
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: '{{ trigger.to_state.name|default(''NULL entityID'') }} was {{ trigger.to_state.state|default(''NULL
+        to_state'') }} at {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+        True)|default(''NULL last_changed'') }}
+
+        '
+- id: honda_door_close_simplepush
+  alias: Send simplepush notification when the Honda door closes for more than 5 seconds
+    to ignore wind gusts
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - sensor.honda_door
+    from: Open
+    to: Closed
+    for:
+      seconds: 5
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: '{{ trigger.to_state.name|default(''NULL entityID'') }} was {{ trigger.to_state.state|default(''NULL
+        to_state'') }} at {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+        True)|default(''NULL last_changed'') }}
+
+        '
+- id: honda_door_open_simplepush
+  alias: Send simplepush notification when the Honda door opens for more than 5 seconds
+    to ignore wind gusts
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - sensor.honda_door
+    from: Closed
+    to: Open
+    for:
+      seconds: 5
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: '{{ trigger.to_state.name|default(''NULL entityID'') }} was {{ trigger.to_state.state|default(''NULL
+        to_state'') }} at {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+        True)|default(''NULL last_changed'') }}
+
+        '
+- id: ford_door_left_open_simplepush
+  alias: Send simplepush notifcation when ford garage door has been open for more
+    than 10 min
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - sensor.ford_door
+    from: Closed
+    to: Open
+    for:
+      minutes: 10
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: '{{ trigger.to_state.name|default(''NULL entityID'') }} has been {{
+        trigger.to_state.state|default(''NULL to_state'') }} since {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+        True)|default(''NULL last_changed'') }}
+
+        '
+- id: honda_door_left_open_simplepush
+  alias: Send simplepush notifcation when honda garage door has been open for more
+    than 10 min
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - sensor.honda_door
+    from: Closed
+    to: Open
+    for:
+      minutes: 10
+  action:
+    - service: notify.simplepush_keith
+      data_template:
+        message: '{{ trigger.to_state.name|default(''NULL entityID'') }} has been {{
+          trigger.to_state.state|default(''NULL to_state'') }} since {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+          True)|default(''NULL last_changed'') }}
+
+          '
+    - service: snips.say
+      data_template:
+        text: '{{ trigger.to_state.name|default(''NULL entityID'') }} has been {{
+          trigger.to_state.state|default(''NULL to_state'') }} since {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+          True)|default(''NULL last_changed'') }}
+
+          '
+- id: ps3_input
+  alias: PS3 input
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: input_select.tv_input
+    to: PS3
+  action:
+  - service: hdmi_cec.select_device
+    data:
+      device: PS3
+- id: tvroom_tv_off
+  alias: Turn off TV
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: input_select.tv_input
+    to: 'OFF'
+  action:
+  - service: hdmi_cec.standby
+- id: tvroom_tv_on
+  alias: Turn on TV
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: input_select.tv_input
+    to: 'ON'
+  action:
+  - service: hdmi_cec.power_on
+- id: lannounce_midnight_keith
+  alias: Tell Keith when it is midnight
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: time
+    at: '23:59:59'
+  action:
+    service: notify.speak_to_keith
+    data_template:
+      message: 'It is getting late. You are going to turn into a pumpkin.
+
+        '
+- id: basement_tv_state_simplepush
+  alias: Send simplepush notification when basement tv changes state
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - media_player.basement_led_tv
+  action:
+    service: notify.simplepush_keith
+    data_template:
+      message: '{{ trigger.to_state.name|default(''NULL entityID'') }} was {{ trigger.to_state.state|default(''NULL
+        to_state'') }} at {{ as_timestamp(trigger.to_state.last_changed)|timestamp_custom(''%X'',
+        True)|default(''NULL last_changed'') }}
+
+        '
+- id: snips_annouce_weather_changes
+  alias: Snips announcement of weather changes
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id:
+    - sensor.dark_sky_minutely_summary
+  action:
+    service: snips.say
+    data_template: 
+      text: 'Weather update.  {{ trigger.to_state.state|default(''NULL to_state'') }}
+          '
+-  id: start_watchdog_timers_on_startup
+   alias: Start all of the watchdog timers on startup
+   initial_state: true
+   hide_entity: false
+   trigger:
+     platform: homeassistant
+     event: start
+   action: 
+     service: timer.start
+     entity_id: 
+     - timer.garage_watchdog
+     - timer.basement_temp_watchdog
+-  id: restart_garage_watchdog_timer
+   alias: Restart a timer to watch the for sensor updates from the garage
+   initial_state: true
+   hide_entity: false
+   trigger:
+     platform: mqtt
+     topic: sensors/farenheit/gar
+   action:
+     service: timer.start
+     entity_id: 
+     - timer.garage_watchdog
+-  id: restart_basement_temp_watchdog_timer
+   alias: Restart a timer to watch the for sensor updates from the basement
+   initial_state: true
+   hide_entity: false
+   trigger:
+     platform: mqtt
+     topic: sensors/farenheit/basement
+   action:
+     service: timer.start
+     entity_id:
+     - timer.basement_temp_watchdog
+- id: timer_watchdog_notification
+  alias: Notifcation for when a watchdog timer expires
+  initial_state: true
+  hide_entity: false
+  trigger:
+    platform: state
+    entity_id: 
+    - timer.garage_watchdog
+    - timer.basement_temp_watchdog
+    from: active
+    to: idle
+  action: 
+    service: notify.simplepush_keith
+    data_template:
+      message: '{{ trigger.to_state.name|default(''NULL entityID'') }} hasnt checked in'

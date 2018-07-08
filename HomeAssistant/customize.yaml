@@ -1,0 +1,17 @@
+device_tracker.esp8266_alarm:
+  icon: mdi:radar
+device_tracker.esp8266_basement:
+  icon: mdi:radar
+device_tracker.esp8266_garage:
+  icon: mdi:radar
+device_tracker.esp8266_mbr_weather:
+  icon: mdi:radar
+device_tracker.esp8266_weather:
+  icon: mdi:radar
+device_tracker.d0f88c617a8e:
+  friendly_name: Lenovo Tab 10
+  icon: mdi:tablet-android
+device_tracker.keith_lenovo10:
+  friendly_name: Lenovo 10 Tablet
+device_tracker.nintendo_switch:
+  icon: mdi:nintendo-switch

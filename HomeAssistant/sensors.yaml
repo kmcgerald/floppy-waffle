@@ -1,0 +1,145 @@
+### sensors.yaml
+  - platform: octoprint
+    name: OctoPrint
+    monitored_conditions:
+      - Current State
+      - Temperatures
+      - Job Percentage
+
+#  - platform: iss
+  - platform: moon
+
+  - platform: command_line
+    name: "CPU Temp" 
+    command: "cat /sys/class/thermal/thermal_zone0/temp"
+    # If errors occur, remove degree symbol below
+    unit_of_measurement: "°C"
+    value_template: '{{ value | multiply(0.001) | round(1) }}'
+
+  - platform: pi_hole
+    host: 10.0.0.152
+
+  - platform: plex
+    host: 10.0.0.152
+
+  - platform: speedtest
+    monitored_conditions:
+      - ping
+      - download
+      - upload
+
+  - platform: crimereports
+    name: "Crime Reports"
+    radius: 8000
+
+  - platform: ups
+    name: "UPS"
+    username: !secret ups_user
+    password: !secret ups_passwd  
+
+  - platform: mqtt
+    state_topic: "sensors/farenheit/basement"
+    name: "Basement Temperature"
+    unit_of_measurement: "°F"
+#  - platform: mqtt
+#    state_topic: "sensors/farenheit/mbr"
+#    name: "MBR Temperature"
+#    unit_of_measurement: "°F"
+  - platform: mqtt
+    state_topic: "sensors/farenheit/gar"
+    name: "Garage Temperature"
+    unit_of_measurement: "°F"
+  - platform: mqtt
+    state_topic: "sensors/humidity/basement"
+    name: "Basement Humidity"
+    unit_of_measurement: "%"
+#  - platform: mqtt
+#    state_topic: "sensors/humidity/mbr"
+#    name: "MBR Humidity"
+#    unit_of_measurement: "%"
+  - platform: mqtt
+    state_topic: "sensors/humidity/gar"
+    name: "Garage Humidity"
+    unit_of_measurement: "%"
+  - platform: mqtt
+    state_topic: "sensors/liquid/walkup"
+    name: "Walkup Liquid"
+  - platform: mqtt
+    state_topic: "doors/basement/"
+    name: "Basement Door"
+  - platform: mqtt
+    state_topic: "doors/front/"
+    name: "Front Door"
+  - platform: mqtt
+    state_topic: "doors/sliding/"
+    name: "Sliding Door"
+  - platform: mqtt
+    state_topic: "doors/garage/"
+    name: "Garage Door"
+  - platform: mqtt
+    state_topic: "doors/ford/"
+    name: "Ford Door"
+  - platform: mqtt
+    state_topic: "doors/honda/"
+    name: "Honda Door"
+  - platform: mqtt
+    state_topic: "owntracks/Keith/Nexus6"
+    name: "Keith's Phone"
+    unit_of_measurement: "% "
+    value_template: '{{ value_json.batt }}'
+  - platform: mqtt
+    state_topic: "owntracks/Keith/KeithsE8"
+    name: "Keith's E8 Tablet"
+    unit_of_measurement: "% "
+    value_template: '{{ value_json.batt }}'
+  - platform: mqtt
+    state_topic: "owntracks/Jenn/JennsE8"
+    name: "Jenn's E8 Tablet"
+    unit_of_measurement: "% "
+    value_template: '{{ value_json.batt }}'
+
+  - platform: darksky
+    api_key: !secret dark_sky_key
+    monitored_conditions:
+      - summary
+      - icon
+      - nearest_storm_distance
+      - nearest_storm_bearing
+      - precip_type
+      - precip_intensity
+      - precip_probability
+      - temperature
+      - apparent_temperature
+      - dew_point
+      - wind_speed
+      - wind_bearing
+      - cloud_cover
+      - humidity
+      - pressure
+      - visibility
+      - ozone
+      - minutely_summary
+      - hourly_summary
+      - daily_summary
+      - temperature_max
+      - temperature_min
+      - apparent_temperature_max
+      - apparent_temperature_min
+      - precip_intensity_max
+
+  - platform: fail2ban
+    jails:
+      - ssh
+      - recidive
+    file_path: /var/log/fail2ban.log
+    scan_interval: 60
+
+  - platform: pollen
+    zip_code: !secret zip_code
+    monitored_conditions:
+      - allergy_average_forecasted
+      - allergy_average_historical
+      - allergy_index_today
+      - allergy_index_tomorrow
+      - allergy_index_yesterday
+      - disease_average_forecasted

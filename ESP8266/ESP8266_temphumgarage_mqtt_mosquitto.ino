@@ -3,18 +3,25 @@
  *  JSON message to my MQTT broker (mosquitto on a Beagle Bone Black) which will be relayed to the OwnTracks client on
  *  my Android phone.  Since the OwnTracks message format requires a UNIX epoch formatted timestamp, I get to roll in some
  *  NTP over UDP for fun.  I used a public domain example of NTP over UDP for ESP8266 by Ivan Grokhotkov
+ *  
+ *  I'm using MQTT for messaging, ArduinoOTA for updating, NTP to grab the time so I 
+ *  know when alerts occurred, and I use a Custom Setup file to store my sensitive 
+ *  values that I don't want to publish to github.  I've grabbed lots of bits of code
+ *  from all over and reworked some of it over time such that I've lost track of who's
+ *  it might have started from.
  */
  
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
+#include <ArduinoOTA.h>
 #include <PubSubClient.h>
 #include "DHT.h"
 #include <WiFiUdp.h>  // Needed for NTP over UDP
-#include "Adafruit_MQTT.h"
-#include "Adafruit_MQTT_Client.h"
 #include "RunningMedian.h"
 #include <Ticker.h>
+#include "CustSetup.h"
 
-#define MQTT_VERSION MQTT_VERSION_3_1  //Override (lower) the version for older Mosquitto 1.2.2 on BBB
+//#define MQTT_VERSION MQTT_VERSION_3_1  //Override (lower) the version for older Mosquitto 1.2.2 on BBB
 
 const int CarPin = 12;
 const int TruckPin = 13;
@@ -45,11 +52,6 @@ float humidity_data;
 float tempF_data;
 float tempC_data;
 
-// Update these with values suitable for your network.
-const char* ssid[] = {"MyWIFIAP","MyBackupAP"};
-const char* password[] = {"The Secure Passphrase I should have","The Secure Passphrase for my backup AP"};
-const int numssid = 2; // How many SSIDs in the array above
-
 // Setting up UDP stuff for NTP
 unsigned int localPort = 2390;      // local port to listen for UDP packets
 /* Don't hardwire the IP address or we won't get the benefits of the pool.
@@ -64,52 +66,18 @@ byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing pack
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udp;
 
-const char* mqtt_server = "192.168.1.175";
-
 WiFiClient espClient;
 PubSubClient client(espClient);
-WiFiClient aioClient;
-/************************* Adafruit.io Setup *********************************/
-
-#define AIO_SERVER      "io.adafruit.com"
-#define AIO_SERVERPORT  1883
-#define AIO_USERNAME    "my_aio_username"
-#define AIO_KEY         "my_aio_key"
-// Store the MQTT server, client ID, username, and password in flash memory.
-// This is required for using the Adafruit MQTT library.
-const char MQTT_SERVER[] PROGMEM    = AIO_SERVER;
-// Set a unique MQTT client ID using the AIO key + the date and time the sketch
-// was compiled (so this should be unique across multiple devices for a user,
-// alternatively you can manually set this to a GUID or other random value).
-const char MQTT_CLIENTID[] PROGMEM  = __TIME__ AIO_USERNAME;
-const char MQTT_USERNAME[] PROGMEM  = AIO_USERNAME;
-const char MQTT_PASSWORD[] PROGMEM  = AIO_KEY;
-
-// Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
-Adafruit_MQTT_Client mqtt(&aioClient, MQTT_SERVER, AIO_SERVERPORT, MQTT_CLIENTID, MQTT_USERNAME, MQTT_PASSWORD);
-
-/****************************** Feeds ***************************************/
-// Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
-const char TEMPFG_FEED[] PROGMEM = AIO_USERNAME "/feeds/tempf-g";
-Adafruit_MQTT_Publish tempfg = Adafruit_MQTT_Publish(&mqtt, TEMPFG_FEED);
-
-const char HUMG_FEED[] PROGMEM = AIO_USERNAME "/feeds/hum-g";
-Adafruit_MQTT_Publish humg = Adafruit_MQTT_Publish(&mqtt, HUMG_FEED);
-
-const char DOORG1_FEED[] PROGMEM = AIO_USERNAME "/feeds/door-g1";
-Adafruit_MQTT_Publish doorg1 = Adafruit_MQTT_Publish(&mqtt, DOORG1_FEED);
-
-const char DOORG2_FEED[] PROGMEM = AIO_USERNAME "/feeds/door-g2";
-Adafruit_MQTT_Publish doorg2 = Adafruit_MQTT_Publish(&mqtt, DOORG2_FEED);
 
 long now = 0;
 long lastMsg = 0;
 char msg[150];
-int value = 0;
 
 void setup() {
   pinMode(CarPin, INPUT);
   pinMode(TruckPin, INPUT);
+  pinMode(BUILTIN_LED, OUTPUT); // Initialize the BUILTIN_LED pin (0) as an output
+  digitalWrite(BUILTIN_LED, LOW); // We're not connected so turn on warning light
   
   // Init sensor
   dht.begin();
@@ -132,9 +100,41 @@ void setup() {
 
   // udpate the running array of sensor values every 6 seconds
   readingTicker.attach(6, setReadyForSensorReading);
+  
+  // OTA Setup
+  String hostname(HOSTNAME);
+  hostname += String(ESP.getChipId(), HEX);
+  //WiFi.hostname(hostname);
+  ArduinoOTA.setHostname((const char *)hostname.c_str());
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
 }
 
 void scan_wifi() {
+  // I like to scan for wifi networks for troubleshooting
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
@@ -163,7 +163,7 @@ void scan_wifi() {
     }
   }
   Serial.println("");
-}
+} //scan_wifi
 
 void setup_wifi() {
 
@@ -195,10 +195,11 @@ void setup_wifi() {
       Serial.println("WiFi connected");
       Serial.println("IP address: ");
       Serial.println(WiFi.localIP());
+      digitalWrite(BUILTIN_LED, HIGH); // We're connected turn off warning light
       return;
     }
   }
-}
+} //setup_wifi
 
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
@@ -213,18 +214,40 @@ void callback(char* topic, byte* payload, unsigned int length) {
     int eT = getEpochTime();
     sendOwnTracksMsg("Status", "Perimeter Check", "fa-eye", eT);
     sendHumanMsg("Status", "Perimeter Check", "fa-eye", eT);
+    int doorState = 0;
+
+    //Check the Car door
+    doorState = digitalRead(CarPin);
+    if (doorState == HIGH) {
+      client.publish("doors/car/", "Open"); // Home MQTT
+      Serial.println("Publish message: doors/car/ : Open");
+    }else if (doorState == LOW) {
+      client.publish("doors/car/", "Closed"); // Home MQTT
+      Serial.println("Publish message: doors/car/ : Closed");
+    }
+
+    //Check the Truck door
+    doorState = digitalRead(TruckPin);
+    if (doorState == HIGH) {
+      client.publish("doors/truck/", "Open"); // Home MQTT
+      Serial.println("Publish message: doors/truck/ : Open");
+    }else if (doorState == LOW) {
+      client.publish("doors/truck/", "Closed"); // Home MQTT
+      Serial.println("Publish message: doors/truck/ : Closed");
+    }
   }
-}
+} //callback
 
 void reconnect() { 
   // Loop until we're reconnected
   if (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client","testUser","testID")) {
+    if (client.connect(mqttName, mqttUser, mqttPassword)) {
+    //if (client.connect("ESP8266Client","testUser","testID")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world from the garage");
+      client.publish(mqttAnnounceTopic, mqttAnnounceMsg);
       int eT = getEpochTime();
       sendOwnTracksMsg("Reconnect", "Just Reconnected the Garage", "fa-eye", eT);
       // ... and resubscribe
@@ -238,19 +261,7 @@ void reconnect() {
       //delay(5000);
     }
   }
-  int8_t retval;
-  if (!mqtt.connected()) {
-    Serial.print("Attempting Adafruit.io MQTT connection ...");
-    retval=mqtt.connect();
-    if (retval != 0) {
-      Serial.println(mqtt.connectErrorString(retval));
-      Serial.println("Retrying Adafruit.io MQTT connection in 5 seconds...");
-      mqtt.disconnect();
-      //delay(5000);
-    }else{
-      Serial.println("Connected to Adafruit.io!");
-    }
-  }
+  digitalWrite(BUILTIN_LED, HIGH); // We're connected turn off warning light
 } //reconnect
 
 unsigned long getEpochFromNTPpacket() {
@@ -323,9 +334,7 @@ unsigned long sendNTPpacket(IPAddress& address)
 } //sendNTPpacket
 
 int getEpochTime() {
-  //get a random server from the pool
   WiFi.hostByName(ntpServerName, timeServerIP);
-  
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
     // wait to see if a reply is available
     delay(1000);
@@ -350,7 +359,6 @@ int getEpochTime() {
 } //getEpochTime
 
 void sendOwnTracksMsg(String title, String desc, String icon, int epoch) {
-    //snprintf (msg, 75, "hello world #%ld", value);
     String json = "{"
                      "\"_type\":\"msg\","
                      "\"prio\":2,"  //Priority color 0=blue, 1=yellow, 2=red
@@ -365,8 +373,7 @@ void sendOwnTracksMsg(String title, String desc, String icon, int epoch) {
       reconnect();
     }
     client.loop();
-    //dtostrf(humidity_data, 4, 2, msg);
-    client.publish("owntracks/Keith/Nexus6/msg", msg);
+    client.publish(ownTracksMsgTopic, msg);
     client.loop();
     client.publish("/msg", msg);
     client.loop();
@@ -406,19 +413,20 @@ void sendHumanMsg(String title, String desc, String icon, int epoch) {
 } //sendHumanMsg
 
 void loop() {
+  // put your main code here, to run repeatedly:
   while (WiFi.status() != WL_CONNECTED){
+    digitalWrite(BUILTIN_LED, LOW); //We're not connected so turn on warning light (active low)
     setup_wifi();
   }
   
   if (!client.connected()) {
+    digitalWrite(BUILTIN_LED, LOW); //We're not connected so turn on warning light (active low)
     reconnect();
   }
 
-  if (!mqtt.connected()) {
-    reconnect();
-  }
-  
   client.loop();
+
+  ArduinoOTA.handle();
 
   if (readyForSensorReading) {
     readyForSensorReading = false;
@@ -455,14 +463,12 @@ void loop() {
     sendOwnTracksMsg("Car Door", "Car Garage Door Opened", "fa-eye", eT);
     sendHumanMsg("Car Door", "Car Garage Door Opened", "fa-eye", eT);
     client.publish("doors/car/", "Open");
-    doorg1.publish("Open");
   }else if ((carDoorState != doorState) && (doorState == LOW)) {
     int eT = getEpochTime();
     carDoorState = doorState;
     sendOwnTracksMsg("Car Door", "Car Garage Door Closed", "fa-eye", eT);
     sendHumanMsg("Car Door", "Car Garage Door Closed", "fa-eye", eT);
     client.publish("doors/car/", "Closed");
-    doorg1.publish("Closed");
   }
 
   //Check the Truck door
@@ -474,14 +480,12 @@ void loop() {
     sendOwnTracksMsg("Truck Door", "Truck Garage Door Opened", "fa-eye", eT);
     sendHumanMsg("Truck Door", "Truck Garage Door Opened", "fa-eye", eT);
     client.publish("doors/truck/", "Open");
-    doorg2.publish("Open");
   }else if ((truckDoorState != doorState) && (doorState == LOW)) {
     int eT = getEpochTime();
     truckDoorState = doorState;
     sendOwnTracksMsg("Truck Door", "Truck Garage Door Closed", "fa-eye", eT);
     sendHumanMsg("Truck Door", "Truck Garage Door Closed", "fa-eye", eT);
     client.publish("doors/truck/", "Closed");
-    doorg2.publish("Closed");
   }
 }
 
@@ -505,11 +509,9 @@ void uploadDHTSensor() {
     
   dtostrf(humidity_data, 4, 2, msg);
   client.publish("sensors/humidity/gar", msg);
-  humg.publish(humidity_data); // publish to Adafruit.io
     
   dtostrf(tempF_data, 4, 2, msg);
   client.publish("sensors/farenheit/gar", msg);
-  tempfg.publish(tempF_data); // publish to Adafruit.io
     
   dtostrf(tempC_data, 4, 2, msg);
   client.publish("sensors/celcius/gar", msg);
